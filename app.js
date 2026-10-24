@@ -2,6 +2,40 @@ const STORAGE_KEY = "gains-tracker-v1";
 const TOTAL_SESSIONS = 60;
 const LIFT_KEYS = { SQ: "squat", BN: "bench", DL: "deadlift", OH: "overheadPress" };
 const LIFT_NAMES = { squat: "Squat", bench: "Bench", deadlift: "Deadlift", overheadPress: "Overhead press" };
+const EXERCISE_VIDEOS = {
+  "Squat": "gcNh17Ckjgg",
+  "Stiff Legged Deadlifts": "CN_7cz3P-1U",
+  "ATG Front Squats": "QDMsrZ111GY",
+  "Bulgarian Split Squats": "vgn7bSXkgkA",
+  "Glute Ham Raise (or Leg Curl)": "c2pWqsHR7FU",
+  "Pallof Press": "HXrLaqNIkTs",
+  "Bench": "SCVCLChPQFY",
+  "Seated Row": "xQNrFHEMhI4",
+  "Low Incline Bench Press": "U_N0Pjohh9I",
+  "One Arm DB Row": "dFzUjzfih7k",
+  "Dips": "2z8JmcrW-As",
+  "Incline DB Curl": "XVQBeug_9LU",
+  "DB Skull Crusher": "1BDGIcMTSXc",
+  "Low Intensity Steady State Cardio": "-gNjjynjx7g",
+  "Deadlifts": "r4MzxtBKyNE",
+  "Pause Squats": "zkdRBl385sE",
+  "Glute Hip Thrusts": "pF17m_CXfL0",
+  "Goblet Squat": "CkFzgR55gho",
+  "Weighted Cable Crunch": "ToJeyhydUxU",
+  "Overhead Press": "cGnhixvC8uA",
+  "Weighted Pull Ups": "7FjX1RODKzQ",
+  "Close Grip Bench Press": "UYJsFzqdgK4",
+  "One Arm Cable Pulldown": "HBC5s98wXko",
+  "Incline DB Press": "OC7Qs_SAO2E",
+  "Hammer Curl": "BRVDS6HVR9Q",
+  "Overhead Triceps Extension": "nRiJVZDpdL0",
+  "High Bar Squats": "i7J5h7BJ07g",
+  "Incline Bench Press": "SrqOu55lrYU",
+  "Pull Ups": "eGo4IYlbE5g",
+  "Pushups": "WDIpL0pjun0",
+  "Lateral Raises": "XPPfnSEATJA",
+  "High Intensity Interval Training": "6NtCDYHp8eQ"
+};
 const appMain = document.querySelector("#app-main");
 const warning = document.querySelector("#storage-warning");
 const toastElement = document.querySelector("#toast");
@@ -121,6 +155,11 @@ function isSessionDue() {
   return isStarted() && state.nextSession < TOTAL_SESSIONS && (state.nextDate || state.startedOn) <= todayString();
 }
 
+function isWorkoutDayToday() {
+  const today = todayString();
+  return isSessionDue() || Object.values(state.logs).some((log) => log?.completedAt?.slice(0, 10) === today);
+}
+
 function sessionLog(key) {
   return state.logs[key] || { sets: {}, note: "" };
 }
@@ -218,6 +257,15 @@ function renderHomePage() {
   const due = isSessionDue();
   const percent = Math.round((done / TOTAL_SESSIONS) * 100);
   const today = formatDate(todayString());
+  const stepTarget = isWorkoutDayToday() ? 8000 : 10000;
+  const stepsCard = `
+    <section class="steps-card" aria-labelledby="steps-title">
+      <div class="steps-card-top">
+        <div><p class="eyebrow">Daily reminder</p><h2 id="steps-title">Today's step target</h2></div>
+        <span class="steps-target">${stepTarget.toLocaleString()} steps</span>
+      </div>
+      <p class="steps-description">${isWorkoutDayToday() ? "Workout day · aim for this many steps today." : "Recovery day · aim for this many steps today."}</p>
+    </section>`;
 
   if (!current) {
     appMain.innerHTML = `
@@ -232,6 +280,7 @@ function renderHomePage() {
         <div class="card-divider"></div><div class="program-stats"><div><span class="stat-value">100%</span><span class="stat-label">Program complete</span></div><div><span class="stat-value">12 weeks</span><span class="stat-label">Of showing up</span></div></div>
         <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
       </div>
+      ${stepsCard}
       <div class="hero-cta"><button class="button secondary" type="button" data-nav="progress">See your progress</button></div>`;
     return;
   }
@@ -259,6 +308,7 @@ function renderHomePage() {
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
     </section>
+    ${stepsCard}
     ${rest ? `
       <div class="rest-card">
         <div class="rest-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v2m0 14v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M3 12h2m14 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></div>
@@ -337,6 +387,11 @@ function renderExercise(ref, exercise, exerciseIndex, canEdit) {
   const repsLabel = exercise.type === "cardio" ? "Duration" : "Reps";
   const groupMarkup = exercise.group ? `<div class="group-label">${escapeHtml(exercise.group)}</div>` : "";
   const noteMarkup = exercise.notes ? `<p class="exercise-note">${escapeHtml(exercise.notes)}</p>` : "";
+  const videoId = EXERCISE_VIDEOS[exercise.name];
+  const videoMarkup = videoId ? `<details class="exercise-video" data-video-id="${videoId}" data-exercise-name="${escapeHtml(exercise.name)}">
+    <summary>How to perform</summary>
+    <div class="exercise-video-player"></div>
+  </details>` : "";
   const setRows = Array.from({ length: exercise.sets }, (_, setIndex) => {
     const set = exerciseLog[setIndex] || {};
     if (exercise.type === "cardio") {
@@ -363,6 +418,7 @@ function renderExercise(ref, exercise, exerciseIndex, canEdit) {
       ${targetText ? `<span class="exercise-target">${escapeHtml(targetText)}</span>` : ""}
     </div>
     ${groupMarkup}${noteMarkup}
+    ${videoMarkup}
     <div class="set-table${exercise.type === "cardio" ? " is-cardio" : ""}">
       <div class="set-table-head"><span>SET</span>${exercise.type === "cardio" ? "" : `<span>${escapeHtml(state.unit.toUpperCase())}</span>`}<span>${escapeHtml(repsLabel)}</span><span class="sr-only">Done</span></div>
       ${setRows}
@@ -639,8 +695,29 @@ function handleChange(event) {
   }
 }
 
+function handleExerciseVideoToggle(event) {
+  const details = event.target;
+  if (!(details instanceof HTMLDetailsElement) || !details.matches(".exercise-video")) return;
+  const player = details.querySelector(".exercise-video-player");
+  if (!(player instanceof HTMLElement)) return;
+  if (!details.open) {
+    player.replaceChildren();
+    return;
+  }
+  if (player.querySelector("iframe")) return;
+
+  const iframe = document.createElement("iframe");
+  iframe.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(details.dataset.videoId)}?playsinline=1&rel=0`;
+  iframe.title = `${details.dataset.exerciseName} demonstration`;
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+  iframe.referrerPolicy = "strict-origin-when-cross-origin";
+  iframe.allowFullscreen = true;
+  player.append(iframe);
+}
+
 document.addEventListener("click", handleClick);
 document.addEventListener("change", handleChange);
+document.addEventListener("toggle", handleExerciseVideoToggle, true);
 
 async function boot() {
   try {

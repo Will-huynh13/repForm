@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#090b09">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RepForm">
+    <meta name="description" content="A private, offline-first 12-week workout tracker.">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" href="repform-logo.png" type="image/png">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="stylesheet" href="styles.css">
+    <title>RepForm — Workout tracker</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="RepForm home" data-nav="home">
+          <img class="brand-mark" src="repform-logo.png" alt="">
+          <span>RepForm<span class="brand-period">.</span></span>
+        </a>
+      </header>
+      <div id="storage-warning" class="storage-warning" role="status" hidden></div>
+      <main id="app-main" tabindex="-1"></main>
+      <nav class="tabbar" aria-label="Main navigation">
+        <button class="tab-button is-active" type="button" data-nav="home" aria-current="page">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="tab-button" type="button" data-nav="workout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9v6m14-6v6M2 10v4m20-4v4M5 12h14M8 7v10m8-10v10"/></svg>
+          <span>Workout</span>
+        </button>
+        <button class="tab-button" type="button" data-nav="progress">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5m0 14h17M8 15l4-4 3 2 5-6"/></svg>
+          <span>Progress</span>
+        </button>
+        <button class="tab-button" type="button" data-nav="settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.4 1.1-1.4 2.4-1.7-.6a8 8 0 0 1-1.6.9l-.3 1.8h-2.8l-.3-1.8a8 8 0 0 1-1.6-.9l-1.7.6-1.4-2.4 1.4-1.1a8 8 0 0 1 0-1.9l-1.4-1.1 1.4-2.4 1.7.6a8 8 0 0 1 1.6-.9l.3-1.8h2.8l.3 1.8a8 8 0 0 1 1.6.9l1.7-.6 1.4 2.4-1.4 1.1a8 8 0 0 1 0 1.8Z"/></svg>
+          <span>Settings</span>
+        </button>
+      </nav>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

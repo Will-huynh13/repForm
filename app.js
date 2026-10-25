@@ -2,6 +2,7 @@ const STORAGE_KEY = "gains-tracker-v1";
 const TOTAL_SESSIONS = 60;
 const LIFT_KEYS = { SQ: "squat", BN: "bench", DL: "deadlift", OH: "overheadPress" };
 const LIFT_NAMES = { squat: "Squat", bench: "Bench", deadlift: "Deadlift", overheadPress: "Overhead press" };
+const WEEKLY_CALORIE_DEFICITS = [0.2, 0.24, 0.28, 0.32, 0.36, 0.4, 0.44, 0.36, 0.48, 0.52, 0.56, 0.6];
 const EXERCISE_VIDEOS = {
   "Squat": "gcNh17Ckjgg",
   "Stiff Legged Deadlifts": "CN_7cz3P-1U",
@@ -56,6 +57,7 @@ function blankState() {
     nextDate: null,
     unit: "lb",
     maxes: { squat: "", bench: "", deadlift: "", overheadPress: "" },
+    nutritionProfile: { sex: "", weightLb: "", heightIn: "", age: "" },
     logs: {}
   };
 }
@@ -72,6 +74,7 @@ function loadState() {
       ...blankState(),
       ...value,
       maxes: { ...blankState().maxes, ...(value.maxes || {}) },
+      nutritionProfile: { ...blankState().nutritionProfile, ...(value.nutritionProfile || {}) },
       logs: value.logs
     };
   } catch (error) {
@@ -155,9 +158,28 @@ function isSessionDue() {
   return isStarted() && state.nextSession < TOTAL_SESSIONS && (state.nextDate || state.startedOn) <= todayString();
 }
 
-function isWorkoutDayToday() {
-  const today = todayString();
-  return isSessionDue() || Object.values(state.logs).some((log) => log?.completedAt?.slice(0, 10) === today);
+function stepsTargetForWeek(week) {
+  return [7000, 8000, 9000, 10000][Math.min(week - 1, 3)] || 7000;
+}
+
+function nutritionTargets(week, day, restDay = false) {
+  const { sex, weightLb, heightIn, age } = state.nutritionProfile;
+  const weight = Number(weightLb);
+  const height = Number(heightIn);
+  const years = Number(age);
+  if (!["Male", "Female"].includes(sex) || !Number.isFinite(weight) || weight <= 0 ||
+      !Number.isFinite(height) || height <= 0 || !Number.isInteger(years) || years <= 0) return null;
+
+  const bmr = Math.round(10 * (weight / 2.204) + 6.25 * (2.54 * height) - 4.92 * years + (sex === "Male" ? 5 : -161));
+  const deficit = WEEKLY_CALORIE_DEFICITS[Math.max(0, Math.min(week - 1, WEEKLY_CALORIE_DEFICITS.length - 1))];
+  const calories = Math.round((bmr * 1.6) - (bmr * deficit));
+  const protein = Math.round(weight);
+  const fatRatio = restDay ? 0.5 : (day === 1 || day === 3
+    ? (week >= 7 ? 0.33 : 0.35)
+    : (week >= 11 ? 0.36 : (week >= 8 ? 0.4 : 0.45)));
+  const fat = Math.round(weight * fatRatio);
+  const carbs = Math.round((calories - (protein * 4 + fat * 9)) / 4);
+  return { protein, carbs, fat };
 }
 
 function sessionLog(key) {
@@ -257,15 +279,6 @@ function renderHomePage() {
   const due = isSessionDue();
   const percent = Math.round((done / TOTAL_SESSIONS) * 100);
   const today = formatDate(todayString());
-  const stepTarget = isWorkoutDayToday() ? 8000 : 10000;
-  const stepsCard = `
-    <section class="steps-card" aria-labelledby="steps-title">
-      <div class="steps-card-top">
-        <div><p class="eyebrow">Daily reminder</p><h2 id="steps-title">Today's step target</h2></div>
-        <span class="steps-target">${stepTarget.toLocaleString()} steps</span>
-      </div>
-      <p class="steps-description">${isWorkoutDayToday() ? "Workout day · aim for this many steps today." : "Recovery day · aim for this many steps today."}</p>
-    </section>`;
 
   if (!current) {
     appMain.innerHTML = `
@@ -280,13 +293,32 @@ function renderHomePage() {
         <div class="card-divider"></div><div class="program-stats"><div><span class="stat-value">100%</span><span class="stat-label">Program complete</span></div><div><span class="stat-value">12 weeks</span><span class="stat-label">Of showing up</span></div></div>
         <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
       </div>
-      ${stepsCard}
       <div class="hero-cta"><button class="button secondary" type="button" data-nav="progress">See your progress</button></div>`;
     return;
   }
 
   const dateLabel = due ? today : formatDate(state.nextDate, { weekday: "short", month: "short", day: "numeric" });
+  const completedToday = Object.entries(state.logs)
+    .filter(([, log]) => log.completedAt?.slice(0, 10) === todayString())
+    .map(([key]) => {
+      const match = key.match(/^w(\d+)-d(\d+)$/);
+      return match ? { week: Number(match[1]), day: Number(match[2]), completedAt: state.logs[key].completedAt } : null;
+    })
+    .filter(Boolean)
+    .sort((first, second) => first.completedAt.localeCompare(second.completedAt))
+    .at(-1);
+  const todayWorkout = due ? current : completedToday;
   const rest = !due;
+  const macroWeek = todayWorkout?.week || current.week;
+  const macroDay = todayWorkout?.day || null;
+  const macroTargets = nutritionTargets(macroWeek, macroDay, !todayWorkout);
+  const macroCard = `
+    <section class="macro-card" aria-labelledby="macro-title">
+      <div class="macro-card-top"><div><p class="eyebrow">Daily nutrition</p><h2 id="macro-title">Macro reminder</h2></div><span class="macro-day-label">${todayWorkout ? `Week ${macroWeek} · Day ${macroDay}` : "Recovery day"}</span></div>
+      ${macroTargets
+        ? `<div class="macro-values"><div><span>Protein</span><strong>${macroTargets.protein}<small>g</small></strong></div><div><span>Carbs</span><strong>${macroTargets.carbs}<small>g</small></strong></div><div><span>Fat</span><strong>${macroTargets.fat}<small>g</small></strong></div></div>`
+        : `<p class="macro-setup-hint">Add your sex, weight, height, and age in Settings to see targets from the program.</p>`}
+    </section>`;
   appMain.innerHTML = `
     <section class="hero-intro">
       <p class="eyebrow">${escapeHtml(today)}</p>
@@ -308,7 +340,7 @@ function renderHomePage() {
       </div>
       <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
     </section>
-    ${stepsCard}
+    ${macroCard}
     ${rest ? `
       <div class="rest-card">
         <div class="rest-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v2m0 14v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M3 12h2m14 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></div>
@@ -348,6 +380,14 @@ function renderWorkoutPage() {
   const canEdit = activeWorkout && due && !completed;
   const progress = getWorkoutProgress(ref);
   const status = completed ? `Completed ${formatDate(log.completedAt.slice(0, 10), { month: "short", day: "numeric" })}` : (canEdit ? "Your workout for today" : (activeWorkout ? `Scheduled for ${formatDate(state.nextDate)}` : "Workout preview"));
+  const targetMacros = nutritionTargets(ref.week, ref.day);
+  const dailyTargets = `
+    <section class="training-targets" aria-label="Daily targets">
+      <div class="training-targets-top"><div><p class="eyebrow">Daily targets</p><h2>Week ${ref.week} · Workout ${ref.day}</h2></div><span class="steps-target">${stepsTargetForWeek(ref.week).toLocaleString()} steps</span></div>
+      ${targetMacros
+        ? `<div class="macro-values"><div><span>Protein</span><strong>${targetMacros.protein}<small>g</small></strong></div><div><span>Carbs</span><strong>${targetMacros.carbs}<small>g</small></strong></div><div><span>Fat</span><strong>${targetMacros.fat}<small>g</small></strong></div></div>`
+        : `<p class="macro-setup-hint">Add your sex, weight, height, and age in Settings to see macro targets.</p>`}
+    </section>`;
 
   appMain.innerHTML = `
     <div class="section-heading" style="margin-top:13px"><h2>Training plan</h2><span class="muted small">12 weeks · 5 days</span></div>
@@ -362,6 +402,7 @@ function renderWorkoutPage() {
       <p class="eyebrow">Week ${ref.week} · Workout ${ref.day}</p>
       <h1>${escapeHtml(ref.session.title)}</h1>
       <p class="muted">${escapeHtml(status)} · ${ref.session.exercises.length} movements</p>
+      ${dailyTargets}
       ${canEdit ? `<div class="workout-completion"><div class="completion-row"><span>Set progress</span><strong id="set-progress">${progress.done} / ${progress.total} sets</strong></div><div class="progress-track"><div id="set-progress-bar" class="progress-fill" style="width:${progress.total ? progress.done / progress.total * 100 : 0}%"></div></div></div>` : ""}
     </header>
     ${activeWorkout && !due && !completed ? `<div class="locked-banner">This workout opens ${escapeHtml(formatDate(state.nextDate))}. Preview the plan now; your next session is ready when the day arrives.</div>` : ""}
@@ -455,8 +496,40 @@ function renderProgressPage() {
 }
 
 function renderSettingsPage() {
+  const profileWeight = state.nutritionProfile.weightLb
+    ? Number(state.nutritionProfile.weightLb) / (state.unit === "kg" ? 2.204 : 1)
+    : "";
+  const profileHeight = state.nutritionProfile.heightIn
+    ? Number(state.nutritionProfile.heightIn) * (state.unit === "kg" ? 2.54 : 1)
+    : "";
   appMain.innerHTML = `
     <section class="hero-intro"><p class="eyebrow">Your app, your settings</p><h1>Settings.</h1><p class="muted">Tune your training and protect your data.</p></section>
+    <section class="settings-section">
+      <h2>Nutrition profile</h2>
+      <div class="settings-card">
+        <label class="setting-row">
+          <span class="setting-copy"><strong>Calculator sex</strong><span>Used by the workbook's BMR formula</span></span>
+          <select class="setting-input profile-select" data-role="nutrition-profile" data-field="sex" aria-label="Calculator sex">
+            <option value=""${state.nutritionProfile.sex ? "" : " selected"}>Select</option>
+            <option value="Male"${state.nutritionProfile.sex === "Male" ? " selected" : ""}>Male</option>
+            <option value="Female"${state.nutritionProfile.sex === "Female" ? " selected" : ""}>Female</option>
+          </select>
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><strong>Body weight (${state.unit})</strong><span>Used to calculate daily macro targets</span></span>
+          <input class="setting-input" type="number" inputmode="decimal" min="0" step="any" placeholder="Required" value="${escapeHtml(profileWeight)}" data-role="nutrition-profile" data-field="weightLb" aria-label="Body weight (${state.unit})">
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><strong>Height (${state.unit === "kg" ? "cm" : "in"})</strong><span>Used to calculate your BMR</span></span>
+          <input class="setting-input" type="number" inputmode="decimal" min="0" step="any" placeholder="Required" value="${escapeHtml(profileHeight)}" data-role="nutrition-profile" data-field="heightIn" aria-label="Height (${state.unit === "kg" ? "cm" : "in"})">
+        </label>
+        <label class="setting-row">
+          <span class="setting-copy"><strong>Age</strong><span>Used to calculate your BMR</span></span>
+          <input class="setting-input" type="number" inputmode="numeric" min="1" step="1" placeholder="Required" value="${escapeHtml(state.nutritionProfile.age)}" data-role="nutrition-profile" data-field="age" aria-label="Age">
+        </label>
+      </div>
+      <p class="backup-hint">Targets follow the workbook's weekly calorie schedule and are calculated from this profile. Profile data is stored locally on this device.</p>
+    </section>
     <section class="settings-section">
       <h2>Training maxes</h2>
       <div class="settings-card">
@@ -582,6 +655,7 @@ function importBackup(file) {
         ...blankState(),
         ...imported,
         maxes: { ...blankState().maxes, ...(imported.maxes || {}) },
+        nutritionProfile: { ...blankState().nutritionProfile, ...(imported.nutritionProfile || {}) },
         logs: imported.logs
       };
       saveState();
@@ -655,6 +729,32 @@ function handleChange(event) {
     state.maxes[target.dataset.key] = value;
     saveState();
     if (activePage === "workout") render();
+    return;
+  }
+  if (target.matches('[data-role="nutrition-profile"]')) {
+    const field = target.dataset.field;
+    const value = target.value.trim();
+    if (field === "sex") {
+      state.nutritionProfile.sex = value;
+    } else if (value) {
+      const number = Number(value);
+      if (target.validity.badInput || !Number.isFinite(number) || number <= 0 || (field === "age" && !Number.isInteger(number))) {
+        showToast(field === "age" ? "Enter a whole-number age greater than zero." : "Enter a number greater than zero.");
+        render();
+        return;
+      }
+      if (field === "weightLb") state.nutritionProfile.weightLb = String(number * (state.unit === "kg" ? 2.204 : 1));
+      else if (field === "heightIn") state.nutritionProfile.heightIn = String(number / (state.unit === "kg" ? 2.54 : 1));
+      else if (field === "age") state.nutritionProfile.age = String(number);
+    } else if (target.validity.badInput) {
+      showToast("Enter a valid number.");
+      render();
+      return;
+    } else {
+      state.nutritionProfile[field] = "";
+    }
+    saveState();
+    render();
     return;
   }
   if (target.matches('[data-role="set-done"]')) {

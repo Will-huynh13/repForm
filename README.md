@@ -16,12 +16,12 @@ Then open `http://localhost:8000` on the development computer. To test on an iPh
 
 - Start the program to begin with workout 1 on that day. After you finish, the next session is scheduled for the next weekday; weekends are recovery days. An unfinished workout stays current until you complete it.
 - Check off sets as you go. Optional squat, bench, deadlift, and overhead press maxes produce suggested working loads from the plan's percentages. The workbook's example maxes are not used.
-- The home screen reminds you of the daily step target: 8,000 on workout days and 10,000 on recovery days.
+- The workout screen shows a step target that builds from 7,000 in week 1 to 10,000 from week 4 onward. Daily macro reminders follow the attached workbook's training/rest-day schedule and require sex, weight, height, and age in Settings.
 - Export a JSON backup from **Settings** before clearing browser/site data or moving to another device. Importing replaces the workout data currently saved on the device.
 
 ## Data and offline use
 
-Workout data is stored in this browser's local storage. It is not encrypted, synced, or automatically backed up. Clearing the browser's site data can remove logs. Export/import is required to transfer a backup between devices.
+Workout data and the nutrition profile are stored in this browser's local storage. They are not encrypted, synced, or automatically backed up. Clearing the browser's site data can remove logs. Export/import is required to transfer a backup between devices.
 
 The service worker caches the app shell and the full workout program after the first successful HTTPS/localhost visit. Subsequent visits can load offline.
 Exercise demonstration videos are embedded from YouTube when opened and require an internet connection; video playback is not available offline.

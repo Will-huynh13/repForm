@@ -21,7 +21,7 @@
 }
 
 * { box-sizing: border-box; }
-html { min-width: 320px; min-height: 100%; background: var(--bg); }
+html { min-width: 320px; min-height: 100%; background: var(--bg); touch-action: manipulation; }
 body { min-width: 320px; min-height: 100vh; margin: 0; }
 button, input, select { font: inherit; }
 button { color: inherit; }

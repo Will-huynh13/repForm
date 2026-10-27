@@ -3,6 +3,40 @@ const TOTAL_SESSIONS = 60;
 const LIFT_KEYS = { SQ: "squat", BN: "bench", DL: "deadlift", OH: "overheadPress" };
 const LIFT_NAMES = { squat: "Squat", bench: "Bench", deadlift: "Deadlift", overheadPress: "Overhead press" };
 const WEEKLY_CALORIE_DEFICITS = [0.2, 0.24, 0.28, 0.32, 0.36, 0.4, 0.44, 0.36, 0.48, 0.52, 0.56, 0.6];
+const EXERCISE_ALTERNATIVES = {
+  "Squat": ["Leg Press", "Hack Squat", "Belt Squat", "Smith Machine Squat"],
+  "Stiff Legged Deadlifts": ["Romanian Deadlift", "Single-Leg Romanian Deadlift", "Cable Pull-Through", "45-Degree Hip Extension"],
+  "ATG Front Squats": ["Barbell Front Squat", "Smith Machine Front Squat", "Hack Squat", "Leg Press"],
+  "Bulgarian Split Squats": ["Reverse Lunge", "Walking Lunge", "Step-Up", "Single-Leg Leg Press"],
+  "Glute Ham Raise (or Leg Curl)": ["Seated Leg Curl", "Lying Leg Curl", "Nordic Hamstring Curl", "Stability Ball Leg Curl"],
+  "Pallof Press": ["Dead Bug", "Weighted Plank", "Suitcase Carry", "Cable Wood Chop"],
+  "Bench": ["Flat Dumbbell Press", "Smith Machine Bench Press", "Machine Chest Press", "Barbell Floor Press"],
+  "Seated Row": ["Chest-Supported Row", "T-Bar Row", "Machine Row", "Seal Row"],
+  "Low Incline Bench Press": ["Incline Machine Press", "Smith Machine Incline Press", "Incline Cable Press", "Incline Barbell Press"],
+  "One Arm DB Row": ["Chest-Supported Dumbbell Row", "One-Arm Landmine Row", "Seal Row", "Machine High Row"],
+  "Dips": ["Assisted Dip", "Decline Dumbbell Press", "Decline Machine Press", "Close-Grip Push-Up"],
+  "Incline DB Curl": ["Preacher Curl", "Spider Curl", "Bayesian Cable Curl", "Incline Cable Curl"],
+  "DB Skull Crusher": ["Cable Triceps Pushdown", "Rope Overhead Triceps Extension", "Cross-Body Cable Triceps Extension", "Lying EZ-Bar Triceps Extension"],
+  "Low Intensity Steady State Cardio": ["Brisk Walking", "Easy Stationary Cycling", "Elliptical at Conversational Pace", "Easy Rowing"],
+  "Deadlifts": ["Trap-Bar Deadlift", "Sumo Deadlift", "Block Pull", "Rack Pull"],
+  "Pause Squats": ["Tempo Squat", "Pin Squat", "Safety-Bar Squat", "Belt Squat"],
+  "Glute Hip Thrusts": ["Barbell Glute Bridge", "Single-Leg Hip Thrust", "Cable Pull-Through", "45-Degree Glute-Biased Back Extension"],
+  "Goblet Squat": ["Landmine Squat", "Hack Squat", "Leg Press", "Smith Machine Squat"],
+  "Weighted Cable Crunch": ["Weighted Decline Sit-Up", "Reverse Crunch", "Ab-Wheel Rollout", "Captain's Chair Knee Raise"],
+  "Overhead Press": ["Seated Dumbbell Shoulder Press", "Machine Shoulder Press", "Half-Kneeling Landmine Press", "Arnold Press"],
+  "Weighted Pull Ups": ["Lat Pulldown", "Assisted Pull-Up", "Neutral-Grip Lat Pulldown", "Kneeling Single-Arm Pulldown"],
+  "Close Grip Bench Press": ["Close-Grip Floor Press", "Machine Close-Grip Press", "Close-Grip Push-Up", "Cable Triceps Pushdown"],
+  "One Arm Cable Pulldown": ["Neutral-Grip Lat Pulldown", "Wide-Grip Lat Pulldown", "Straight-Arm Cable Pulldown", "Kneeling Single-Arm Pulldown"],
+  "Incline DB Press": ["Incline Machine Press", "Smith Machine Incline Press", "Incline Cable Press", "Incline Barbell Press"],
+  "Hammer Curl": ["Rope Hammer Curl", "Cross-Body Dumbbell Hammer Curl", "Neutral-Grip Cable Curl", "Rope Cable Curl"],
+  "Overhead Triceps Extension": ["Cable Triceps Pushdown", "Cross-Body Cable Triceps Extension", "Lying EZ-Bar Triceps Extension", "Single-Arm Cable Triceps Extension"],
+  "High Bar Squats": ["Leg Press", "Hack Squat", "Belt Squat", "Smith Machine Squat"],
+  "Incline Bench Press": ["Incline Machine Press", "Smith Machine Incline Press", "Incline Cable Press", "Incline Dumbbell Press"],
+  "Pull Ups": ["Assisted Pull-Up", "Lat Pulldown", "Neutral-Grip Lat Pulldown", "Kneeling Single-Arm Pulldown"],
+  "Pushups": ["Machine Chest Press", "Cable Chest Press", "Dumbbell Floor Press", "Smith Machine Bench Press"],
+  "Lateral Raises": ["Cable Lateral Raise", "Machine Lateral Raise", "Leaning Dumbbell Lateral Raise", "Behind-the-Back Cable Lateral Raise"],
+  "High Intensity Interval Training": ["Stationary Bike Intervals", "Rowing Intervals", "Treadmill Sprint Intervals", "Elliptical Intervals"]
+};
 const EXERCISE_VIDEOS = {
   "Squat": "gcNh17Ckjgg",
   "Stiff Legged Deadlifts": "CN_7cz3P-1U",
@@ -35,7 +69,103 @@ const EXERCISE_VIDEOS = {
   "Pull Ups": "eGo4IYlbE5g",
   "Pushups": "WDIpL0pjun0",
   "Lateral Raises": "XPPfnSEATJA",
-  "High Intensity Interval Training": "6NtCDYHp8eQ"
+  "High Intensity Interval Training": "6NtCDYHp8eQ",
+  "45-Degree Glute-Biased Back Extension": "G6HG5VzJoNc",
+  "45-Degree Hip Extension": "OMb1VFQK9Tk",
+  "Ab-Wheel Rollout": "A3uK5TPzHq8",
+  "Arnold Press": "ris9tKqMwgU",
+  "Assisted Dip": "P9CkuhCc0TE",
+  "Assisted Pull-Up": "gx0RWT7WbmA",
+  "Barbell Floor Press": "Izkam7-uklQ",
+  "Barbell Front Squat": "wyDbagKS7Rg",
+  "Barbell Glute Bridge": "0od5lwWMGV8",
+  "Bayesian Cable Curl": "8PXe7YNOfb4",
+  "Behind-the-Back Cable Lateral Raise": "y4Djk_G0yEg",
+  "Belt Squat": "V0bPCIjJA7U",
+  "Block Pull": "F6cZbkUOBiI",
+  "Brisk Walking": "q3JYT_jKs7Y",
+  "Cable Chest Press": "fOHouR0t9Cw",
+  "Cable Lateral Raise": "BGw_YA3KiHs",
+  "Cable Pull-Through": "IU-ERkjTKXA",
+  "Cable Triceps Pushdown": "-zLyUAo1gMw",
+  "Cable Wood Chop": "ZDt4MCvjMAA",
+  "Captain's Chair Knee Raise": "7KDDZtaUaxw",
+  "Chest-Supported Dumbbell Row": "ro2vfHfD0DQ",
+  "Chest-Supported Row": "ro2vfHfD0DQ",
+  "Close-Grip Floor Press": "1BwMa2C9n78",
+  "Close-Grip Push-Up": "G2mlaEfpEIM",
+  "Cross-Body Cable Triceps Extension": "xzs9RTtt5y8",
+  "Cross-Body Dumbbell Hammer Curl": "udiW8R3d1Pg",
+  "Dead Bug": "o4GKiEoYClI",
+  "Decline Dumbbell Press": "Pf1nDoqx_1A",
+  "Decline Machine Press": "_DsWm45BCqg",
+  "Dumbbell Floor Press": "Bx4QPVH-J1g",
+  "Easy Rowing": "4zWu1yuJ0_g",
+  "Easy Stationary Cycling": "rEqRmKAQ5xM",
+  "Elliptical Intervals": "EesEvYohy5o",
+  "Elliptical at Conversational Pace": "RakIFxUmSpA",
+  "Flat Dumbbell Press": "O7ECGhZj_Hc",
+  "Hack Squat": "0tn5K9NlCfo",
+  "Half-Kneeling Landmine Press": "sjTytMaBsdQ",
+  "Incline Barbell Press": "SrqOu55lrYU",
+  "Incline Cable Curl": "CxXEXInM_L0",
+  "Incline Cable Press": "K88hDCAfjMU",
+  "Incline Dumbbell Press": "IP4oeKh1Sd4",
+  "Incline Machine Press": "VesHgJR14E8",
+  "Kneeling Single-Arm Pulldown": "Vu3OrBHrMNk",
+  "Landmine Squat": "hJ6XnlQ3yBU",
+  "Lat Pulldown": "SALxEARiMkw",
+  "Leaning Dumbbell Lateral Raise": "qWif_7SOYpQ",
+  "Leg Press": "K5n2vg3oZa4",
+  "Lying EZ-Bar Triceps Extension": "hOwZLq1VSRg",
+  "Lying Leg Curl": "vl5nUdE9mWM",
+  "Machine Chest Press": "n8TOta_pfr4",
+  "Machine Close-Grip Press": "0TPkV7AXX8o",
+  "Machine High Row": "beKbbq6NhWY",
+  "Machine Lateral Raise": "NNAs8jx_zJI",
+  "Machine Row": "TeFo51Q_Nsc",
+  "Machine Shoulder Press": "3R14MnZbcpw",
+  "Neutral-Grip Cable Curl": "NFzTWp2qpiE",
+  "Neutral-Grip Lat Pulldown": "E1FK9APxk54",
+  "Nordic Hamstring Curl": "3-4pKUhkzoQ",
+  "One-Arm Landmine Row": "eEA6JNbT5FY",
+  "Pin Squat": "9UHbrvW_WWM",
+  "Preacher Curl": "9WDQqgiwQEY",
+  "Rack Pull": "cxVrqTqD_J4",
+  "Reverse Crunch": "ewrE2xDXClU",
+  "Reverse Lunge": "Ry-wqegeKlE",
+  "Romanian Deadlift": "5zmlnbWb-g4",
+  "Rope Cable Curl": "INms4j4rz-A",
+  "Rope Hammer Curl": "V8AR3SGzboU",
+  "Rope Overhead Triceps Extension": "GzmlxvSFE7A",
+  "Rowing Intervals": "4zWu1yuJ0_g",
+  "Safety-Bar Squat": "b2jmZyptN64",
+  "Seal Row": "4H2ItXwUTp8",
+  "Seated Dumbbell Shoulder Press": "hOTABpGvhBc",
+  "Seated Leg Curl": "t9sTSr-JYSs",
+  "Single-Arm Cable Triceps Extension": "ZvF4Oi_6Vtg",
+  "Single-Leg Hip Thrust": "xKDhmWlf1UE",
+  "Single-Leg Leg Press": "x4vaHXRfKrg",
+  "Single-Leg Romanian Deadlift": "Zfr6wizR8rs",
+  "Smith Machine Bench Press": "O5viuEPDXKY",
+  "Smith Machine Front Squat": "uIXkPdgaTss",
+  "Smith Machine Incline Press": "8urE8Z8AMQ4",
+  "Smith Machine Squat": "8TEK4DPVVPs",
+  "Spider Curl": "CITtSuda0Fg",
+  "Stability Ball Leg Curl": "XkESHgkTdFw",
+  "Stationary Bike Intervals": "fW-gDFOLaCk",
+  "Step-Up": "wfhXnLILqdk",
+  "Straight-Arm Cable Pulldown": "98W63pVdW38",
+  "Suitcase Carry": "y-hn_Ha1-RE",
+  "Sumo Deadlift": "JbY72Him34Q",
+  "T-Bar Row": "TyLoy3n_a10",
+  "Tempo Squat": "P9Hxs237fVQ",
+  "Trap-Bar Deadlift": "EsqwERaSTMI",
+  "Treadmill Sprint Intervals": "PkAw3NbcJ78",
+  "Walking Lunge": "Pbmj6xPo-Hw",
+  "Weighted Decline Sit-Up": "N7hf1_vcX5w",
+  "Weighted Plank": "H88Ip-MUWn0",
+  "Wide-Grip Lat Pulldown": "SALxEARiMkw"
 };
 const appMain = document.querySelector("#app-main");
 const warning = document.querySelector("#storage-warning");
@@ -56,6 +186,7 @@ function blankState() {
     nextSession: 0,
     nextDate: null,
     unit: "lb",
+    showExerciseVideos: false,
     maxes: { squat: "", bench: "", deadlift: "", overheadPress: "" },
     nutritionProfile: { sex: "", weightLb: "", heightIn: "", age: "" },
     logs: {}
@@ -218,12 +349,23 @@ function formatPrescription(exercise) {
   return intensity ? `${prescription} · ${intensity}` : prescription;
 }
 
+function exerciseForSession(log, exercise, exerciseIndex) {
+  const edit = log.exerciseEdits?.[exerciseIndex] || {};
+  return {
+    ...exercise,
+    name: edit.name || exercise.name,
+    sets: edit.sets || exercise.sets,
+    reps: edit.reps || exercise.reps
+  };
+}
+
 function getWorkoutProgress(ref) {
   const log = sessionLog(ref.key);
   let done = 0;
   let total = 0;
   ref.session.exercises.forEach((exercise, exerciseIndex) => {
-    for (let setIndex = 0; setIndex < exercise.sets; setIndex += 1) {
+    const editedExercise = exerciseForSession(log, exercise, exerciseIndex);
+    for (let setIndex = 0; setIndex < editedExercise.sets; setIndex += 1) {
       total += 1;
       if (log.sets?.[exerciseIndex]?.[setIndex]?.done) done += 1;
     }
@@ -378,6 +520,7 @@ function renderWorkoutPage() {
   const activeWorkout = ref.index === state.nextSession;
   const due = activeWorkout && isSessionDue();
   const canEdit = activeWorkout && due && !completed;
+  const canCustomize = !completed;
   const progress = getWorkoutProgress(ref);
   const status = completed ? `Completed ${formatDate(log.completedAt.slice(0, 10), { month: "short", day: "numeric" })}` : (canEdit ? "Your workout for today" : (activeWorkout ? `Scheduled for ${formatDate(state.nextDate)}` : "Workout preview"));
   const targetMacros = nutritionTargets(ref.week, ref.day);
@@ -388,7 +531,6 @@ function renderWorkoutPage() {
         ? `<div class="macro-values"><div><span>Protein</span><strong>${targetMacros.protein}<small>g</small></strong></div><div><span>Carbs</span><strong>${targetMacros.carbs}<small>g</small></strong></div><div><span>Fat</span><strong>${targetMacros.fat}<small>g</small></strong></div></div>`
         : `<p class="macro-setup-hint">Add your sex, weight, height, and age in Settings to see macro targets.</p>`}
     </section>`;
-
   appMain.innerHTML = `
     <div class="section-heading" style="margin-top:13px"><h2>Training plan</h2><span class="muted small">12 weeks · 5 days</span></div>
     <div class="week-strip" aria-label="Choose program week">${program.weeks.map((week) => `<button class="week-pill${week.week === ref.week ? " is-selected" : ""}" type="button" data-action="select-week" data-week="${week.week}">Week ${week.week}</button>`).join("")}</div>
@@ -407,7 +549,7 @@ function renderWorkoutPage() {
     </header>
     ${activeWorkout && !due && !completed ? `<div class="locked-banner">This workout opens ${escapeHtml(formatDate(state.nextDate))}. Preview the plan now; your next session is ready when the day arrives.</div>` : ""}
     ${completed ? `<div class="locked-banner">Workout saved on this device. Your next session is queued for ${escapeHtml(formatDate(state.nextDate))}.</div>` : ""}
-    <div class="exercise-list">${ref.session.exercises.map((exercise, exerciseIndex) => renderExercise(ref, exercise, exerciseIndex, canEdit)).join("")}</div>
+    <div class="exercise-list">${ref.session.exercises.map((exercise, exerciseIndex) => renderExercise(ref, exercise, exerciseIndex, canEdit, canCustomize)).join("")}</div>
     ${canEdit ? `
       <label class="workout-note-field"><span>Workout notes</span><textarea data-role="workout-note" data-session-key="${ref.key}" placeholder="How did the session feel?">${escapeHtml(log.note || "")}</textarea></label>
       <div class="finish-wrap"><button class="button" type="button" data-action="finish">Finish workout <span class="button-arrow">✓</span></button></div>
@@ -416,55 +558,102 @@ function renderWorkoutPage() {
     ${completed ? `<div class="finish-wrap"><button class="button secondary" type="button" data-nav="progress">View progress</button></div>` : ""}`;
 }
 
-function renderExercise(ref, exercise, exerciseIndex, canEdit) {
+function renderExercise(ref, exercise, exerciseIndex, canEdit, canCustomize) {
   const log = sessionLog(ref.key);
   const exerciseLog = log.sets?.[exerciseIndex] || {};
+  const selectedExerciseBaseName = log.substitutions?.[exerciseIndex] || exercise.name;
+  const selectedExerciseName = log.exerciseEdits?.[exerciseIndex]?.name || selectedExerciseBaseName;
+  const selectedExercise = findExerciseDefinition(selectedExerciseBaseName) || findExerciseDefinition(selectedExerciseName) || exercise;
+  const editedExercise = exerciseForSession(log, exercise, exerciseIndex);
   let completedSets = 0;
-  for (let index = 0; index < exercise.sets; index += 1) if (exerciseLog[index]?.done) completedSets += 1;
-  const target = suggestedLoad(exercise);
-  const targetText = exercise.percent
-    ? (target ? `${target} ${state.unit}` : `${Math.round(exercise.percent * 100)}%`)
-    : (exercise.intensity.startsWith("@") ? formatIntensity(exercise) : "");
-  const repsLabel = exercise.type === "cardio" ? "Duration" : "Reps";
+  for (let index = 0; index < editedExercise.sets; index += 1) if (exerciseLog[index]?.done) completedSets += 1;
+  const target = suggestedLoad(editedExercise);
+  const targetText = editedExercise.percent
+    ? (target ? `${target} ${state.unit}` : `${Math.round(editedExercise.percent * 100)}%`)
+    : (editedExercise.intensity.startsWith("@") ? formatIntensity(editedExercise) : "");
+  const repsLabel = selectedExercise.type === "cardio" ? "Duration" : "Reps";
   const groupMarkup = exercise.group ? `<div class="group-label">${escapeHtml(exercise.group)}</div>` : "";
-  const noteMarkup = exercise.notes ? `<p class="exercise-note">${escapeHtml(exercise.notes)}</p>` : "";
-  const videoId = EXERCISE_VIDEOS[exercise.name];
-  const videoMarkup = videoId ? `<details class="exercise-video" data-video-id="${videoId}" data-exercise-name="${escapeHtml(exercise.name)}">
+  const noteMarkup = selectedExercise.notes ? `<p class="exercise-note">${escapeHtml(selectedExercise.notes)}</p>` : "";
+  const plateCalculator = `
+    <details class="plate-calculator">
+      <summary>Quick weight calculator</summary>
+      <label>Add plate weights <span>Separate weights with spaces, e.g. 45 45 20</span>
+        <input type="text" inputmode="decimal" autocomplete="off" placeholder="45 45 20" data-role="plate-weight-calculation" aria-label="Add plate weights for ${escapeHtml(selectedExerciseName)}">
+      </label>
+      <output data-role="weight-calculation-result" aria-live="polite">Enter weights to add</output>
+    </details>`;
+  const videoId = EXERCISE_VIDEOS[selectedExerciseName];
+  const videoMarkup = state.showExerciseVideos ? `<details class="exercise-video"${videoId ? ` data-video-id="${videoId}"` : ""} data-exercise-name="${escapeHtml(selectedExerciseName)}">
     <summary>How to perform</summary>
-    <div class="exercise-video-player"></div>
+    ${videoId
+      ? `<div class="exercise-video-player"></div>`
+      : `<a class="exercise-video-search" href="https://www.youtube.com/results?search_query=${encodeURIComponent(`${selectedExerciseName} exercise demonstration proper form`)}" target="_blank" rel="noopener noreferrer">Find a ${escapeHtml(selectedExerciseName)} video demo on YouTube ↗</a>`}
   </details>` : "";
-  const setRows = Array.from({ length: exercise.sets }, (_, setIndex) => {
+  const alternatives = EXERCISE_ALTERNATIVES[exercise.name] || [];
+  const alternativeMarkup = alternatives.length ? `<details class="exercise-alternatives">
+    <summary>${selectedExerciseBaseName === exercise.name ? "Swap exercise" : `Replace with ${escapeHtml(selectedExerciseBaseName)}`}</summary>
+    <label class="alternative-select-label">Choose a movement targeting similar primary muscles
+      <select class="alternative-select" data-role="exercise-substitution" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" aria-label="Alternative for ${escapeHtml(exercise.name)}">
+        <option value="">Keep ${escapeHtml(exercise.name)}</option>
+        ${alternatives.map((name) => `<option value="${escapeHtml(name)}"${name === selectedExerciseBaseName ? " selected" : ""}>${escapeHtml(name)}</option>`).join("")}
+      </select>
+    </label>
+  </details>` : "";
+  const setRows = Array.from({ length: editedExercise.sets }, (_, setIndex) => {
     const set = exerciseLog[setIndex] || {};
-    if (exercise.type === "cardio") {
+    if (selectedExercise.type === "cardio") {
       return `<div class="set-row">
       <span class="set-number">${String(setIndex + 1).padStart(2, "0")}</span>
-      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(exercise.name)} set ${setIndex + 1} duration" placeholder="${escapeHtml(exercise.reps)}" value="${escapeHtml(set.reps || "")}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="reps" ${canEdit ? "" : "disabled"}>
-      <input class="set-check" type="checkbox" aria-label="Mark ${escapeHtml(exercise.name)} set ${setIndex + 1} complete" ${set.done ? "checked" : ""} ${canEdit ? "" : "disabled"} data-role="set-done" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}">
+      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(selectedExerciseName)} set ${setIndex + 1} duration" placeholder="${escapeHtml(editedExercise.reps)}" value="${escapeHtml(set.reps || editedExercise.reps)}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="reps" ${canEdit ? "" : "disabled"}>
+      <input class="set-check" type="checkbox" aria-label="Mark ${escapeHtml(selectedExerciseName)} set ${setIndex + 1} complete" ${set.done ? "checked" : ""} ${canEdit ? "" : "disabled"} data-role="set-done" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}">
     </div>`;
     }
     return `<div class="set-row">
       <span class="set-number">${String(setIndex + 1).padStart(2, "0")}</span>
-      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(exercise.name)} set ${setIndex + 1} ${state.unit}" placeholder="${escapeHtml(target || "—")}" value="${escapeHtml(set.weight || "")}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="weight" ${canEdit ? "" : "disabled"}>
-      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(exercise.name)} set ${setIndex + 1} ${repsLabel.toLowerCase()}" placeholder="${escapeHtml(exercise.reps)}" value="${escapeHtml(set.reps || "")}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="reps" ${canEdit ? "" : "disabled"}>
-      <input class="set-check" type="checkbox" aria-label="Mark ${escapeHtml(exercise.name)} set ${setIndex + 1} complete" ${set.done ? "checked" : ""} ${canEdit ? "" : "disabled"} data-role="set-done" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}">
+      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(selectedExerciseName)} set ${setIndex + 1} ${state.unit}" placeholder="${escapeHtml(target || "—")}" value="${escapeHtml(set.weight || "")}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="weight" ${canEdit ? "" : "disabled"}>
+      <input class="set-input" type="text" inputmode="decimal" autocomplete="off" aria-label="${escapeHtml(selectedExerciseName)} set ${setIndex + 1} ${repsLabel.toLowerCase()}" placeholder="${escapeHtml(editedExercise.reps)}" value="${escapeHtml(set.reps || editedExercise.reps)}" data-role="set-value" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}" data-field="reps" ${canEdit ? "" : "disabled"}>
+      <input class="set-check" type="checkbox" aria-label="Mark ${escapeHtml(selectedExerciseName)} set ${setIndex + 1} complete" ${set.done ? "checked" : ""} ${canEdit ? "" : "disabled"} data-role="set-done" data-session-key="${ref.key}" data-exercise="${exerciseIndex}" data-set="${setIndex}">
     </div>`;
   }).join("");
-  return `<article class="exercise-card${completedSets === exercise.sets ? " is-done" : ""}">
+  return `<article class="exercise-card${completedSets === editedExercise.sets ? " is-done" : ""}">
     <div class="exercise-top">
       <span class="exercise-number">${String(exerciseIndex + 1).padStart(2, "0")}</span>
       <div class="exercise-title-wrap">
-        <h3 class="exercise-title">${escapeHtml(exercise.name)}</h3>
-        <div class="exercise-prescription">${escapeHtml(formatPrescription(exercise))}</div>
+        <h3 class="exercise-title">${escapeHtml(selectedExerciseName)}</h3>
+        <div class="exercise-prescription">${escapeHtml(formatPrescription(editedExercise))}</div>
       </div>
       ${targetText ? `<span class="exercise-target">${escapeHtml(targetText)}</span>` : ""}
+      ${canCustomize ? `<button class="exercise-edit-button" type="button" data-action="edit-exercise" data-exercise="${exerciseIndex}" aria-expanded="false" aria-label="Edit ${escapeHtml(selectedExerciseName)}">Edit</button>` : ""}
     </div>
-    ${groupMarkup}${noteMarkup}
+    ${canCustomize ? `<div class="exercise-editor" data-exercise-editor="${exerciseIndex}" hidden>
+      <label>Exercise name<input type="text" maxlength="80" value="${escapeHtml(selectedExerciseName)}" data-edit-field="name"></label>
+      <div class="exercise-editor-fields">
+        <label>Sets<input type="number" min="1" max="30" step="1" value="${editedExercise.sets}" data-edit-field="sets"></label>
+        <label>${escapeHtml(repsLabel)} per set<input type="text" maxlength="30" value="${escapeHtml(editedExercise.reps)}" data-edit-field="reps"></label>
+      </div>
+      <div class="exercise-editor-actions">
+        <button type="button" class="button" data-action="save-exercise" data-exercise="${exerciseIndex}">Save</button>
+        <button type="button" class="button secondary" data-action="cancel-exercise" data-exercise="${exerciseIndex}">Cancel</button>
+      </div>
+    </div>` : ""}
+    ${groupMarkup}${noteMarkup}${alternativeMarkup}
     ${videoMarkup}
-    <div class="set-table${exercise.type === "cardio" ? " is-cardio" : ""}">
-      <div class="set-table-head"><span>SET</span>${exercise.type === "cardio" ? "" : `<span>${escapeHtml(state.unit.toUpperCase())}</span>`}<span>${escapeHtml(repsLabel)}</span><span class="sr-only">Done</span></div>
+    ${plateCalculator}
+    <div class="set-table${selectedExercise.type === "cardio" ? " is-cardio" : ""}">
+      <div class="set-table-head"><span>SET</span>${selectedExercise.type === "cardio" ? "" : `<span>${escapeHtml(state.unit.toUpperCase())}</span>`}<span>${escapeHtml(repsLabel)}</span><span class="sr-only">Done</span></div>
       ${setRows}
     </div>
   </article>`;
+}
+
+function findExerciseDefinition(name) {
+  for (const week of program.weeks) {
+    for (const session of week.sessions) {
+      const exercise = session.exercises.find((item) => item.name === name);
+      if (exercise) return exercise;
+    }
+  }
+  return null;
 }
 
 function renderProgressPage() {
@@ -504,6 +693,15 @@ function renderSettingsPage() {
     : "";
   appMain.innerHTML = `
     <section class="hero-intro"><p class="eyebrow">Your app, your settings</p><h1>Settings.</h1><p class="muted">Tune your training and protect your data.</p></section>
+    <section class="settings-section">
+      <h2>Workout display</h2>
+      <div class="settings-card">
+        <label class="setting-row">
+          <span class="setting-copy"><strong>How to perform videos</strong><span>Show or hide video guides in each exercise</span></span>
+          <input class="setting-toggle" type="checkbox" data-role="exercise-videos-toggle" aria-label="Show how to perform videos"${state.showExerciseVideos ? " checked" : ""}>
+        </label>
+      </div>
+    </section>
     <section class="settings-section">
       <h2>Nutrition profile</h2>
       <div class="settings-card">
@@ -699,6 +897,34 @@ function handleClick(event) {
     const desiredDay = selectedSessionIndex === null ? 1 : (sessionForIndex(selectedSessionIndex)?.day || 1);
     selectedSessionIndex = sessionIndex(week, desiredDay);
     render();
+  } else if (action === "edit-exercise") {
+    const card = button.closest(".exercise-card");
+    const editor = card?.querySelector(`[data-exercise-editor="${button.dataset.exercise}"]`);
+    if (!editor) return;
+    editor.hidden = !editor.hidden;
+    button.setAttribute("aria-expanded", String(!editor.hidden));
+    if (!editor.hidden) editor.querySelector('[data-edit-field="name"]')?.focus();
+  } else if (action === "cancel-exercise") {
+    render();
+  } else if (action === "save-exercise") {
+    const ref = sessionForIndex(selectedSessionIndex);
+    const card = button.closest(".exercise-card");
+    const sessionKey = card?.querySelector('[data-role="set-value"]')?.dataset.sessionKey;
+    if (!ref || ref.key !== sessionKey || sessionLog(ref.key).completedAt) return;
+    const name = card.querySelector('[data-edit-field="name"]')?.value.trim();
+    const setsInput = card.querySelector('[data-edit-field="sets"]');
+    const sets = Number(setsInput?.value);
+    const reps = card.querySelector('[data-edit-field="reps"]')?.value.trim();
+    if (!name || !setsInput || !Number.isInteger(sets) || sets < 1 || sets > 30 || !reps) {
+      showToast("Enter an exercise name, 1–30 sets, and reps or duration.");
+      return;
+    }
+    const log = sessionLog(ref.key);
+    if (!log.exerciseEdits) log.exerciseEdits = {};
+    log.exerciseEdits[button.dataset.exercise] = { name, sets, reps };
+    state.logs[ref.key] = log;
+    saveState();
+    render();
   } else if (action === "finish") completeWorkout();
   else if (action === "unit") {
     state.unit = button.dataset.unit;
@@ -719,6 +945,28 @@ function handleClick(event) {
 
 function handleChange(event) {
   const target = event.target;
+  if (target.matches('[data-role="exercise-videos-toggle"]')) {
+    state.showExerciseVideos = target.checked;
+    saveState();
+    return;
+  }
+  if (target.matches('[data-role="exercise-substitution"]')) {
+    const log = sessionLog(target.dataset.sessionKey);
+    const exerciseIndex = target.dataset.exercise;
+    if (!log.substitutions) log.substitutions = {};
+    if (target.value) log.substitutions[exerciseIndex] = target.value;
+    else delete log.substitutions[exerciseIndex];
+    if (Object.keys(log.substitutions).length === 0) delete log.substitutions;
+    if (log.exerciseEdits?.[exerciseIndex]) {
+      delete log.exerciseEdits[exerciseIndex].name;
+      if (Object.keys(log.exerciseEdits[exerciseIndex]).length === 0) delete log.exerciseEdits[exerciseIndex];
+      if (Object.keys(log.exerciseEdits).length === 0) delete log.exerciseEdits;
+    }
+    state.logs[target.dataset.sessionKey] = log;
+    saveState();
+    render();
+    return;
+  }
   if (target.matches('[data-role="max"]')) {
     const value = target.value.trim();
     if (value && (!Number.isFinite(Number(value)) || Number(value) <= 0)) {
@@ -759,25 +1007,49 @@ function handleChange(event) {
   }
   if (target.matches('[data-role="set-done"]')) {
     const log = sessionLog(target.dataset.sessionKey);
-    const set = ensureSetLog(log, Number(target.dataset.exercise), Number(target.dataset.set));
+    const exerciseIndex = Number(target.dataset.exercise);
+    const setIndex = Number(target.dataset.set);
+    const set = ensureSetLog(log, exerciseIndex, setIndex);
     set.done = target.checked;
+    const ref = sessionForIndex(selectedSessionIndex);
+    const exercise = ref ? exerciseForSession(log, ref.session.exercises[exerciseIndex], exerciseIndex) : null;
+    if (target.checked && ref?.key === target.dataset.sessionKey && exercise && setIndex + 1 < exercise.sets) {
+      const nextSet = ensureSetLog(log, exerciseIndex, setIndex + 1);
+      if (!nextSet.weight) nextSet.weight = set.weight || "";
+      const exerciseCard = target.closest(".exercise-card");
+      const nextWeightInput = exerciseCard?.querySelector(`[data-role="set-value"][data-exercise="${exerciseIndex}"][data-set="${setIndex + 1}"][data-field="weight"]`);
+      if (nextWeightInput) nextWeightInput.value = nextSet.weight;
+    }
     state.logs[target.dataset.sessionKey] = log;
     saveState();
-    const ref = sessionForIndex(selectedSessionIndex);
     if (ref) {
       updateWorkoutProgress(ref);
       const exerciseCard = target.closest(".exercise-card");
-      const exercise = ref.session.exercises[Number(target.dataset.exercise)];
-      const exerciseSets = log.sets[Number(target.dataset.exercise)] || {};
+      const exerciseSets = log.sets[exerciseIndex] || {};
       const doneCount = Object.values(exerciseSets).filter((item) => item.done).length;
-      exerciseCard?.classList.toggle("is-done", doneCount >= exercise.sets);
+      if (exercise) exerciseCard?.classList.toggle("is-done", doneCount >= exercise.sets);
     }
     return;
   }
   if (target.matches('[data-role="set-value"]')) {
+    const exerciseIndex = Number(target.dataset.exercise);
+    const setIndex = Number(target.dataset.set);
     const log = sessionLog(target.dataset.sessionKey);
-    const set = ensureSetLog(log, Number(target.dataset.exercise), Number(target.dataset.set));
+    const set = ensureSetLog(log, exerciseIndex, setIndex);
     set[target.dataset.field] = target.value.trim();
+    if (target.dataset.field === "weight" && set.weight) {
+      const match = target.dataset.sessionKey.match(/^w(\d+)-d(\d+)$/);
+      const ref = match ? sessionForIndex(sessionIndex(Number(match[1]), Number(match[2]))) : null;
+      const exercise = ref ? exerciseForSession(log, ref.session.exercises[exerciseIndex], exerciseIndex) : null;
+      if (exercise && setIndex + 1 < exercise.sets) {
+        const nextSet = ensureSetLog(log, exerciseIndex, setIndex + 1);
+        if (!nextSet.weight) {
+          nextSet.weight = set.weight;
+          const nextInput = target.closest(".exercise-card")?.querySelector(`[data-role="set-value"][data-exercise="${exerciseIndex}"][data-set="${setIndex + 1}"][data-field="weight"]`);
+          if (nextInput) nextInput.value = set.weight;
+        }
+      }
+    }
     state.logs[target.dataset.sessionKey] = log;
     saveState();
     return;
@@ -798,6 +1070,7 @@ function handleChange(event) {
 function handleExerciseVideoToggle(event) {
   const details = event.target;
   if (!(details instanceof HTMLDetailsElement) || !details.matches(".exercise-video")) return;
+  if (!details.dataset.videoId) return;
   const player = details.querySelector(".exercise-video-player");
   if (!(player instanceof HTMLElement)) return;
   if (!details.open) {
@@ -817,6 +1090,23 @@ function handleExerciseVideoToggle(event) {
 
 document.addEventListener("click", handleClick);
 document.addEventListener("change", handleChange);
+document.addEventListener("input", (event) => {
+  const input = event.target;
+  if (!input.matches('[data-role="plate-weight-calculation"]')) return;
+  const output = input.closest(".plate-calculator")?.querySelector('[data-role="weight-calculation-result"]');
+  if (!output) return;
+  const weights = input.value.trim();
+  if (!weights) {
+    output.textContent = "Enter weights to add";
+    return;
+  }
+  if (!/^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?)*$/.test(weights)) {
+    output.textContent = "Use numbers separated by spaces";
+    return;
+  }
+  const total = weights.split(/\s+/).reduce((sum, value) => sum + Number(value), 0);
+  output.textContent = `Total added weight: ${total.toLocaleString()} ${state.unit}`;
+});
 document.addEventListener("toggle", handleExerciseVideoToggle, true);
 
 async function boot() {

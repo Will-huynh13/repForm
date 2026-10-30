@@ -14,11 +14,11 @@ Then open `http://localhost:8000` on the development computer. To test on an iPh
 
 ## Use
 
-- Start the program to begin with workout 1 on that day. After you finish, the next session is scheduled for the next weekday; weekends are recovery days. An unfinished workout stays current until you complete it.
+- The five weekly workouts are scheduled Monday–Wednesday and Friday–Saturday. Thursday and Sunday are active recovery days; the home screen calls out an upcoming recovery day and shows the next workout date. Starting the program on an active recovery day schedules workout 1 for the next training day.
 - Check off sets as you go. Optional squat, bench, deadlift, and overhead press maxes produce suggested working loads from the plan's percentages. The workbook's example maxes are not used.
 - The workout screen shows a step target that builds from 7,000 in week 1 to 10,000 from week 4 onward. Daily macro reminders follow the attached workbook's training/rest-day schedule and require sex, weight, height, and age in Settings.
 - Exercise demonstration videos are hidden by default; enable **How to perform videos** in Settings to show guides on workout cards. The listed exercise swaps have embedded demos; custom exercise names without a mapped demo offer a YouTube search.
-- Exercise cards can be edited per workout to change the exercise name, number of sets, and reps or duration. Swap lists offer offline alternatives targeting similar primary muscles, separate from the program's movements. Set reps are prefilled from the plan; weights carry forward to the next empty set, including when a set is completed, but each set must be checked off individually. Each exercise has a quick-add calculator for space-separated plate weights.
+- Exercise cards can be edited per workout to change the exercise name, number of sets, and reps or duration. Swap lists offer offline alternatives targeting similar primary muscles, separate from the program's movements. Set reps are prefilled from the plan; weights carry forward to the next empty set, including when a set is completed, but each set must be checked off individually. Each exercise has a quick-add calculator for dot-separated plate weights (for example, `45.45.20`).
 - Export a JSON backup from **Settings** before clearing browser/site data or moving to another device. Importing replaces the workout data currently saved on the device.
 
 ## Data and offline use

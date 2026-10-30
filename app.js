@@ -201,13 +201,15 @@ function loadState() {
     if (value?.version !== 1 || typeof value.logs !== "object" || !value.logs) {
       throw new Error("The saved workout data isn't in a format this version can read.");
     }
-    return {
+    const loadedState = {
       ...blankState(),
       ...value,
       maxes: { ...blankState().maxes, ...(value.maxes || {}) },
       nutritionProfile: { ...blankState().nutritionProfile, ...(value.nutritionProfile || {}) },
       logs: value.logs
     };
+    loadedState.nextDate = normalizeNextDate(loadedState.nextDate);
+    return loadedState;
   } catch (error) {
     persistenceAvailable = false;
     showWarning(`Saved data could not be loaded: ${error.message} Your current session can still run, but changes won't be saved. Export/import a backup if you have one.`);
@@ -254,10 +256,21 @@ function addDays(dateString, amount) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function isRecoveryDay(dateString) {
+  const day = new Date(`${dateString}T12:00:00`).getDay();
+  return day === 0 || day === 4;
+}
+
 function nextTrainingDate(dateString) {
   let result = addDays(dateString, 1);
-  while ([0, 6].includes(new Date(`${result}T12:00:00`).getDay())) result = addDays(result, 1);
+  while (isRecoveryDay(result)) result = addDays(result, 1);
   return result;
+}
+
+function normalizeNextDate(dateString) {
+  return dateString && isRecoveryDay(dateString)
+    ? nextTrainingDate(addDays(dateString, -1))
+    : dateString;
 }
 
 function sessionForIndex(index) {
@@ -440,6 +453,19 @@ function renderHomePage() {
   }
 
   const dateLabel = due ? today : formatDate(state.nextDate, { weekday: "short", month: "short", day: "numeric" });
+  const tomorrowDate = addDays(todayString(), 1);
+  const todayDay = new Date(`${todayString()}T12:00:00`).getDay();
+  const nextWorkoutDate = due ? nextTrainingDate(todayString()) : state.nextDate;
+  const upcomingRestNote = isRecoveryDay(tomorrowDate)
+    ? `<aside class="upcoming-rest-note"><strong>Tomorrow, ${formatDate(tomorrowDate, { weekday: "long" })}, is an active recovery day.</strong> ${state.nextSession + (due ? 1 : 0) < TOTAL_SESSIONS
+      ? `Your next workout is scheduled for ${escapeHtml(formatDate(nextWorkoutDate, { weekday: "long", month: "long", day: "numeric" }))}.`
+      : "You have completed the full program."}</aside>`
+    : "";
+  const restDayDescription = todayDay === 4
+    ? `Thursday is an active recovery day. Your next workout is scheduled for ${dateLabel}.`
+    : todayDay === 0
+      ? `Sunday is an active recovery day. Your next workout is scheduled for ${dateLabel}.`
+      : `Today is an active recovery day. Your next workout is scheduled for ${dateLabel}.`;
   const completedToday = Object.entries(state.logs)
     .filter(([, log]) => log.completedAt?.slice(0, 10) === todayString())
     .map(([key]) => {
@@ -450,7 +476,8 @@ function renderHomePage() {
     .sort((first, second) => first.completedAt.localeCompare(second.completedAt))
     .at(-1);
   const todayWorkout = due ? current : completedToday;
-  const rest = !due;
+  const completedWorkoutToday = Boolean(completedToday);
+  const rest = !completedWorkoutToday && (isRecoveryDay(todayString()) || !due);
   const macroWeek = todayWorkout?.week || current.week;
   const macroDay = todayWorkout?.day || null;
   const macroTargets = nutritionTargets(macroWeek, macroDay, !todayWorkout);
@@ -464,13 +491,13 @@ function renderHomePage() {
   appMain.innerHTML = `
     <section class="hero-intro">
       <p class="eyebrow">${escapeHtml(today)}</p>
-      <h1>${rest ? "Take your time." : "Ready when you are."}</h1>
-      <p class="muted">${rest ? "Recovery is part of the program." : "One session at a time. Keep the streak alive."}</p>
+      <h1>${rest ? "Active recovery." : (completedWorkoutToday && !due ? "Workout complete." : "Ready when you are.")}</h1>
+      <p class="muted">${rest ? "Recovery is part of the program." : (completedWorkoutToday && !due ? "Nice work today. Your next workout is coming up." : "One session at a time. Keep the streak alive.")}</p>
     </section>
     <section class="program-card" aria-label="Next workout">
       <div class="program-card-top">
         <span class="program-tag">Week ${current.week} · Workout ${current.day}</span>
-        <span class="date-tag">${rest ? `UP NEXT · ${escapeHtml(dateLabel)}` : "TODAY"}</span>
+        <span class="date-tag">${due ? "TODAY" : `UP NEXT · ${escapeHtml(dateLabel)}`}</span>
       </div>
       <h2>${escapeHtml(current.session.title)}</h2>
       <p class="program-subtitle">${escapeHtml(current.session.category)} · ${current.session.exercises.length} movements</p>
@@ -483,14 +510,17 @@ function renderHomePage() {
       <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
     </section>
     ${macroCard}
+    ${upcomingRestNote}
     ${rest ? `
       <div class="rest-card">
         <div class="rest-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v2m0 14v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M3 12h2m14 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></div>
-        <div><h3>Recovery day</h3><p>Your next workout is queued up. Rest, hydrate, and come back ready.</p><span class="rest-date">Next up · ${escapeHtml(dateLabel)}</span></div>
+        <div><h3>Recovery day</h3><p>${restDayDescription}</p><span class="rest-date">Next workout · ${escapeHtml(dateLabel)}</span></div>
       </div>
       <div class="hero-cta"><button class="button secondary" type="button" data-action="view-next">Preview next workout <span class="button-arrow">→</span></button></div>
-    ` : `
+    ` : due ? `
       <div class="hero-cta"><button class="button" type="button" data-action="open-active">Start today's workout <span class="button-arrow">→</span></button></div>
+    ` : `
+      <div class="hero-cta"><button class="button secondary" type="button" data-action="view-next">Preview next workout <span class="button-arrow">→</span></button></div>
     `}
     <div class="section-heading"><h2>Program week</h2><span class="muted small">Week ${current.week} of 12</span></div>
     <div class="day-strip">${renderHomeDays(current.week, current.day, due)}</div>`;
@@ -577,8 +607,8 @@ function renderExercise(ref, exercise, exerciseIndex, canEdit, canCustomize) {
   const plateCalculator = `
     <details class="plate-calculator">
       <summary>Quick weight calculator</summary>
-      <label>Add plate weights <span>Separate weights with spaces, e.g. 45 45 20</span>
-        <input type="text" inputmode="decimal" autocomplete="off" placeholder="45 45 20" data-role="plate-weight-calculation" aria-label="Add plate weights for ${escapeHtml(selectedExerciseName)}">
+      <label>Add plate weights <span>Separate weights with dots, e.g. 45.45.20</span>
+        <input type="text" inputmode="decimal" autocomplete="off" data-role="plate-weight-calculation" aria-label="Add plate weights for ${escapeHtml(selectedExerciseName)}">
       </label>
       <output data-role="weight-calculation-result" aria-live="polite">Enter weights to add</output>
     </details>`;
@@ -780,7 +810,7 @@ function updateWorkoutProgress(ref) {
 
 function startProgram() {
   state.startedOn = todayString();
-  state.nextDate = state.startedOn;
+  state.nextDate = isRecoveryDay(state.startedOn) ? nextTrainingDate(state.startedOn) : state.startedOn;
   state.nextSession = 0;
   activePage = "home";
   saveState();
@@ -856,6 +886,7 @@ function importBackup(file) {
         nutritionProfile: { ...blankState().nutritionProfile, ...(imported.nutritionProfile || {}) },
         logs: imported.logs
       };
+      state.nextDate = normalizeNextDate(state.nextDate);
       saveState();
       selectedSessionIndex = null;
       activePage = "home";
@@ -1100,11 +1131,11 @@ document.addEventListener("input", (event) => {
     output.textContent = "Enter weights to add";
     return;
   }
-  if (!/^\d+(?:\.\d+)?(?:\s+\d+(?:\.\d+)?)*$/.test(weights)) {
-    output.textContent = "Use numbers separated by spaces";
+  if (!/^\d+(?:\.\d+)*$/.test(weights)) {
+    output.textContent = "Use whole numbers separated by dots";
     return;
   }
-  const total = weights.split(/\s+/).reduce((sum, value) => sum + Number(value), 0);
+  const total = weights.split(".").reduce((sum, value) => sum + Number(value), 0);
   output.textContent = `Total added weight: ${total.toLocaleString()} ${state.unit}`;
 });
 document.addEventListener("toggle", handleExerciseVideoToggle, true);

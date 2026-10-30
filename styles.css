@@ -167,18 +167,20 @@ h3 { margin-bottom: 0; }
 .rest-card {
   margin-top: 16px;
   padding: 18px;
-  border: 1px solid var(--line);
+  border: 1px solid #55423a;
   border-radius: 19px;
-  background: var(--surface);
+  background: #211a17;
   display: flex;
   gap: 13px;
   align-items: flex-start;
 }
-.rest-icon { width: 37px; height: 37px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #1e2920; color: var(--lime); }
+.rest-icon { width: 37px; height: 37px; display: grid; flex: 0 0 auto; place-items: center; border-radius: 12px; background: #3a2a23; color: #e8ad82; }
 .rest-icon svg { width: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .rest-card h3 { margin: 1px 0 5px; font-size: 14px; }
 .rest-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
-.rest-card .rest-date { display: block; margin-top: 7px; color: var(--lime); font-size: 11px; font-weight: 700; }
+.rest-card .rest-date { display: block; margin-top: 7px; color: #e8ad82; font-size: 11px; font-weight: 700; }
+.upcoming-rest-note { margin-top: 13px; border: 1px solid #33402c; border-radius: 13px; padding: 12px 14px; background: #141b11; color: #c5cdbd; font-size: 11px; line-height: 1.5; }
+.upcoming-rest-note strong { display: block; margin-bottom: 3px; color: var(--lime); font-size: 12px; }
 .macro-card, .training-targets { margin-top: 16px; border: 1px solid var(--line); border-radius: 19px; padding: 17px; background: var(--surface); }
 .macro-card-top, .training-targets-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .macro-card .eyebrow, .training-targets .eyebrow { margin-bottom: 5px; font-size: 9px; }

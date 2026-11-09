@@ -1,4 +1,4 @@
-const CACHE_NAME = "repform-tracker-v4";
+const CACHE_NAME = "repform-tracker-v5";
 const APP_FILES = [
   "./",
   "./index.html",

@@ -175,8 +175,17 @@ let persistenceAvailable = true;
 let toastTimeout;
 
 function todayString() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  return localDateString(new Date());
+}
+
+function localDateString(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function localDateStringFromTimestamp(timestamp) {
+  if (typeof timestamp !== "string" || !timestamp) return null;
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? null : localDateString(date);
 }
 
 function blankState() {
@@ -184,7 +193,6 @@ function blankState() {
     version: 1,
     startedOn: null,
     nextSession: 0,
-    nextDate: null,
     unit: "lb",
     showExerciseVideos: false,
     maxes: { squat: "", bench: "", deadlift: "", overheadPress: "" },
@@ -208,7 +216,6 @@ function loadState() {
       nutritionProfile: { ...blankState().nutritionProfile, ...(value.nutritionProfile || {}) },
       logs: value.logs
     };
-    loadedState.nextDate = normalizeNextDate(loadedState.nextDate);
     return loadedState;
   } catch (error) {
     persistenceAvailable = false;
@@ -250,29 +257,6 @@ function formatDate(dateString, options = { weekday: "long", month: "long", day:
   return new Intl.DateTimeFormat(undefined, options).format(date);
 }
 
-function addDays(dateString, amount) {
-  const date = new Date(`${dateString}T12:00:00`);
-  date.setDate(date.getDate() + amount);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
-function isRecoveryDay(dateString) {
-  const day = new Date(`${dateString}T12:00:00`).getDay();
-  return day === 0 || day === 4;
-}
-
-function nextTrainingDate(dateString) {
-  let result = addDays(dateString, 1);
-  while (isRecoveryDay(result)) result = addDays(result, 1);
-  return result;
-}
-
-function normalizeNextDate(dateString) {
-  return dateString && isRecoveryDay(dateString)
-    ? nextTrainingDate(addDays(dateString, -1))
-    : dateString;
-}
-
 function sessionForIndex(index) {
   if (index < 0 || index >= TOTAL_SESSIONS) return null;
   const weekIndex = Math.floor(index / 5);
@@ -299,14 +283,14 @@ function activeSession() {
 }
 
 function isSessionDue() {
-  return isStarted() && state.nextSession < TOTAL_SESSIONS && (state.nextDate || state.startedOn) <= todayString();
+  return isStarted() && state.nextSession < TOTAL_SESSIONS;
 }
 
 function stepsTargetForWeek(week) {
   return [7000, 8000, 9000, 10000][Math.min(week - 1, 3)] || 7000;
 }
 
-function nutritionTargets(week, day, restDay = false) {
+function nutritionTargets(week, day) {
   const { sex, weightLb, heightIn, age } = state.nutritionProfile;
   const weight = Number(weightLb);
   const height = Number(heightIn);
@@ -318,9 +302,9 @@ function nutritionTargets(week, day, restDay = false) {
   const deficit = WEEKLY_CALORIE_DEFICITS[Math.max(0, Math.min(week - 1, WEEKLY_CALORIE_DEFICITS.length - 1))];
   const calories = Math.round((bmr * 1.6) - (bmr * deficit));
   const protein = Math.round(weight);
-  const fatRatio = restDay ? 0.5 : (day === 1 || day === 3
+  const fatRatio = day === 1 || day === 3
     ? (week >= 7 ? 0.33 : 0.35)
-    : (week >= 11 ? 0.36 : (week >= 8 ? 0.4 : 0.45)));
+    : (week >= 11 ? 0.36 : (week >= 8 ? 0.4 : 0.45));
   const fat = Math.round(weight * fatRatio);
   const carbs = Math.round((calories - (protein * 4 + fat * 9)) / 4);
   return { protein, carbs, fat };
@@ -443,7 +427,7 @@ function renderHomePage() {
         <p class="muted">Twelve weeks of work. That's something to be proud of.</p>
       </section>
       <div class="program-card">
-        <div class="program-card-top"><span class="program-tag">12 week program</span><span class="date-tag">Finished ${escapeHtml(formatDate(state.logs["w12-d5"]?.completedAt?.slice(0, 10), { month: "short", day: "numeric" }))}</span></div>
+        <div class="program-card-top"><span class="program-tag">12 week program</span><span class="date-tag">Finished ${escapeHtml(formatDate(localDateStringFromTimestamp(state.logs["w12-d5"]?.completedAt), { month: "short", day: "numeric" }))}</span></div>
         <h2>60 workouts done.</h2><p class="program-subtitle">You've completed the full training plan.</p>
         <div class="card-divider"></div><div class="program-stats"><div><span class="stat-value">100%</span><span class="stat-label">Program complete</span></div><div><span class="stat-value">12 weeks</span><span class="stat-label">Of showing up</span></div></div>
         <div class="progress-track"><div class="progress-fill" style="width:100%"></div></div>
@@ -452,38 +436,12 @@ function renderHomePage() {
     return;
   }
 
-  const dateLabel = due ? today : formatDate(state.nextDate, { weekday: "short", month: "short", day: "numeric" });
-  const tomorrowDate = addDays(todayString(), 1);
-  const todayDay = new Date(`${todayString()}T12:00:00`).getDay();
-  const nextWorkoutDate = due ? nextTrainingDate(todayString()) : state.nextDate;
-  const upcomingRestNote = isRecoveryDay(tomorrowDate)
-    ? `<aside class="upcoming-rest-note"><strong>Tomorrow, ${formatDate(tomorrowDate, { weekday: "long" })}, is an active recovery day.</strong> ${state.nextSession + (due ? 1 : 0) < TOTAL_SESSIONS
-      ? `Your next workout is scheduled for ${escapeHtml(formatDate(nextWorkoutDate, { weekday: "long", month: "long", day: "numeric" }))}.`
-      : "You have completed the full program."}</aside>`
-    : "";
-  const restDayDescription = todayDay === 4
-    ? `Thursday is an active recovery day. Your next workout is scheduled for ${dateLabel}.`
-    : todayDay === 0
-      ? `Sunday is an active recovery day. Your next workout is scheduled for ${dateLabel}.`
-      : `Today is an active recovery day. Your next workout is scheduled for ${dateLabel}.`;
-  const completedToday = Object.entries(state.logs)
-    .filter(([, log]) => log.completedAt?.slice(0, 10) === todayString())
-    .map(([key]) => {
-      const match = key.match(/^w(\d+)-d(\d+)$/);
-      return match ? { week: Number(match[1]), day: Number(match[2]), completedAt: state.logs[key].completedAt } : null;
-    })
-    .filter(Boolean)
-    .sort((first, second) => first.completedAt.localeCompare(second.completedAt))
-    .at(-1);
-  const todayWorkout = due ? current : completedToday;
-  const completedWorkoutToday = Boolean(completedToday);
-  const rest = !completedWorkoutToday && (isRecoveryDay(todayString()) || !due);
-  const macroWeek = todayWorkout?.week || current.week;
-  const macroDay = todayWorkout?.day || null;
-  const macroTargets = nutritionTargets(macroWeek, macroDay, !todayWorkout);
+  const macroWeek = current.week;
+  const macroDay = current.day;
+  const macroTargets = nutritionTargets(macroWeek, macroDay);
   const macroCard = `
     <section class="macro-card" aria-labelledby="macro-title">
-      <div class="macro-card-top"><div><p class="eyebrow">Daily nutrition</p><h2 id="macro-title">Macro reminder</h2></div><span class="macro-day-label">${todayWorkout ? `Week ${macroWeek} · Day ${macroDay}` : "Recovery day"}</span></div>
+      <div class="macro-card-top"><div><p class="eyebrow">Daily nutrition</p><h2 id="macro-title">Macro reminder</h2></div><span class="macro-day-label">Week ${macroWeek} · Day ${macroDay}</span></div>
       ${macroTargets
         ? `<div class="macro-values"><div><span>Protein</span><strong>${macroTargets.protein}<small>g</small></strong></div><div><span>Carbs</span><strong>${macroTargets.carbs}<small>g</small></strong></div><div><span>Fat</span><strong>${macroTargets.fat}<small>g</small></strong></div></div>`
         : `<p class="macro-setup-hint">Add your sex, weight, height, and age in Settings to see targets from the program.</p>`}
@@ -491,13 +449,13 @@ function renderHomePage() {
   appMain.innerHTML = `
     <section class="hero-intro">
       <p class="eyebrow">${escapeHtml(today)}</p>
-      <h1>${rest ? "Active recovery." : (completedWorkoutToday && !due ? "Workout complete." : "Ready when you are.")}</h1>
-      <p class="muted">${rest ? "Recovery is part of the program." : (completedWorkoutToday && !due ? "Nice work today. Your next workout is coming up." : "One session at a time. Keep the streak alive.")}</p>
+      <h1>Ready when you are.</h1>
+      <p class="muted">One session at a time. Keep the streak alive.</p>
     </section>
     <section class="program-card" aria-label="Next workout">
       <div class="program-card-top">
         <span class="program-tag">Week ${current.week} · Workout ${current.day}</span>
-        <span class="date-tag">${due ? "TODAY" : `UP NEXT · ${escapeHtml(dateLabel)}`}</span>
+        <span class="date-tag">${due ? "READY" : "UP NEXT"}</span>
       </div>
       <h2>${escapeHtml(current.session.title)}</h2>
       <p class="program-subtitle">${escapeHtml(current.session.category)} · ${current.session.exercises.length} movements</p>
@@ -510,18 +468,7 @@ function renderHomePage() {
       <div class="progress-track"><div class="progress-fill" style="width:${percent}%"></div></div>
     </section>
     ${macroCard}
-    ${upcomingRestNote}
-    ${rest ? `
-      <div class="rest-card">
-        <div class="rest-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v2m0 14v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M3 12h2m14 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/><circle cx="12" cy="12" r="4"/></svg></div>
-        <div><h3>Recovery day</h3><p>${restDayDescription}</p><span class="rest-date">Next workout · ${escapeHtml(dateLabel)}</span></div>
-      </div>
-      <div class="hero-cta"><button class="button secondary" type="button" data-action="view-next">Preview next workout <span class="button-arrow">→</span></button></div>
-    ` : due ? `
-      <div class="hero-cta"><button class="button" type="button" data-action="open-active">Start today's workout <span class="button-arrow">→</span></button></div>
-    ` : `
-      <div class="hero-cta"><button class="button secondary" type="button" data-action="view-next">Preview next workout <span class="button-arrow">→</span></button></div>
-    `}
+    <div class="hero-cta"><button class="button" type="button" data-action="open-active">Start next workout <span class="button-arrow">→</span></button></div>
     <div class="section-heading"><h2>Program week</h2><span class="muted small">Week ${current.week} of 12</span></div>
     <div class="day-strip">${renderHomeDays(current.week, current.day, due)}</div>`;
 }
@@ -552,7 +499,7 @@ function renderWorkoutPage() {
   const canEdit = activeWorkout && due && !completed;
   const canCustomize = !completed;
   const progress = getWorkoutProgress(ref);
-  const status = completed ? `Completed ${formatDate(log.completedAt.slice(0, 10), { month: "short", day: "numeric" })}` : (canEdit ? "Your workout for today" : (activeWorkout ? `Scheduled for ${formatDate(state.nextDate)}` : "Workout preview"));
+  const status = completed ? `Completed ${formatDate(localDateStringFromTimestamp(log.completedAt), { month: "short", day: "numeric" })}` : (canEdit ? "Ready whenever you are" : "Workout preview");
   const targetMacros = nutritionTargets(ref.week, ref.day);
   const dailyTargets = `
     <section class="training-targets" aria-label="Daily targets">
@@ -577,8 +524,7 @@ function renderWorkoutPage() {
       ${dailyTargets}
       ${canEdit ? `<div class="workout-completion"><div class="completion-row"><span>Set progress</span><strong id="set-progress">${progress.done} / ${progress.total} sets</strong></div><div class="progress-track"><div id="set-progress-bar" class="progress-fill" style="width:${progress.total ? progress.done / progress.total * 100 : 0}%"></div></div></div>` : ""}
     </header>
-    ${activeWorkout && !due && !completed ? `<div class="locked-banner">This workout opens ${escapeHtml(formatDate(state.nextDate))}. Preview the plan now; your next session is ready when the day arrives.</div>` : ""}
-    ${completed ? `<div class="locked-banner">Workout saved on this device. Your next session is queued for ${escapeHtml(formatDate(state.nextDate))}.</div>` : ""}
+    ${completed ? `<div class="locked-banner">Workout saved on this device. Your next workout is ready whenever you are.</div>` : ""}
     <div class="exercise-list">${ref.session.exercises.map((exercise, exerciseIndex) => renderExercise(ref, exercise, exerciseIndex, canEdit, canCustomize)).join("")}</div>
     ${canEdit ? `
       <label class="workout-note-field"><span>Workout notes</span><textarea data-role="workout-note" data-session-key="${ref.key}" placeholder="How did the session feel?">${escapeHtml(log.note || "")}</textarea></label>
@@ -810,7 +756,6 @@ function updateWorkoutProgress(ref) {
 
 function startProgram() {
   state.startedOn = todayString();
-  state.nextDate = isRecoveryDay(state.startedOn) ? nextTrainingDate(state.startedOn) : state.startedOn;
   state.nextSession = 0;
   activePage = "home";
   saveState();
@@ -827,7 +772,7 @@ function completeWorkout() {
     <section class="finish-dialog" role="dialog" aria-modal="true" aria-labelledby="finish-title">
       <p class="eyebrow">Week ${ref.week} · Workout ${ref.day}</p>
       <h2 id="finish-title">Finish this workout?</h2>
-      <p>${progress.done} of ${progress.total} sets checked off. Saving this session moves you to the next workout for the next training day.</p>
+      <p>${progress.done} of ${progress.total} sets checked off. Saving this session makes your next workout available whenever you're ready.</p>
       <div class="finish-dialog-actions">
         <button type="button" class="button" data-finish-confirm>Save workout</button>
         <button type="button" class="button secondary" data-finish-cancel>Keep logging</button>
@@ -843,7 +788,6 @@ function completeWorkout() {
     log.completedAt = new Date().toISOString();
     state.logs[ref.key] = log;
     state.nextSession += 1;
-    state.nextDate = state.nextSession < TOTAL_SESSIONS ? nextTrainingDate(todayString()) : null;
     selectedSessionIndex = null;
     activePage = "home";
     saveState();
@@ -886,7 +830,6 @@ function importBackup(file) {
         nutritionProfile: { ...blankState().nutritionProfile, ...(imported.nutritionProfile || {}) },
         logs: imported.logs
       };
-      state.nextDate = normalizeNextDate(state.nextDate);
       saveState();
       selectedSessionIndex = null;
       activePage = "home";
